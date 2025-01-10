@@ -4,14 +4,15 @@ import com.eventostec.api.domain.event.Event;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Date;
 import java.util.UUID;
 
 @Table(name = "coupon")
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Coupon {
 
     @Id
@@ -20,7 +21,9 @@ public class Coupon {
 
     private String code;
     private Integer discount;
-    private Data valid;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date valid;
 
     @ManyToOne // Um Evento pode pertencer a diversos Cupons, enquanto um Cupom pertence a apenas um Evento
     @JoinColumn(name = "event_id")
