@@ -1,15 +1,15 @@
-package com.eventostec.api.service;
+package com.eventostec.api.services;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.dto.event.EventRequestDto;
+import com.eventostec.api.repositories.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
@@ -25,6 +25,9 @@ public class EventService {
     @Value("${aws.bucket.name}")
     private String bucketName;
 
+    @Autowired
+    private EventRepository eventRepository;
+
     public Event createEvent(EventRequestDto data){
         String imgUrl = null;
 
@@ -38,12 +41,14 @@ public class EventService {
         newEvent.setEventUrl(data.eventUrl());
         newEvent.setDate(new Date(data.date()));
         newEvent.setImgUrl(imgUrl);
+        newEvent.setRemote(data.remote());
 
+        eventRepository.save(newEvent);
         return newEvent;
     }
 
     private String uploadImage(MultipartFile multipartFile){
-        String fileName = UUID.randomUUID() + "-" + multipartFile.getOriginalFilename(); // Gerar nome único para a nossa imagem
+        String fileName = UUID.randomUUID() + "-" + multipartFile.getOriginalFilename();
 
         try {
             File file = this.convertMutipartToFile(multipartFile);
@@ -51,16 +56,21 @@ public class EventService {
             file.delete();
             return s3Client.getUrl(bucketName, fileName).toString();
         } catch (Exception e){
-            System.out.printf("Erro ao fazer upload da imagem: %s");
+            System.out.println("Erro ao fazer upload  da imagem" + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
 
     private File convertMutipartToFile(MultipartFile multipartFile) throws IOException {
+        if (multipartFile.getOriginalFilename() == null || multipartFile.getOriginalFilename().isEmpty()) {
+            return null;
+        }
+
         File convFile = new File(Objects.requireNonNull(multipartFile.getOriginalFilename()));
-        FileOutputStream fos = new FileOutputStream(convFile);
-        fos.write(multipartFile.getBytes());
-        fos.close();
+        try (FileOutputStream fos = new FileOutputStream(convFile)) {
+            fos.write(multipartFile.getBytes());
+        }
         return convFile;
     }
 }
