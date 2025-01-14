@@ -79,9 +79,9 @@ public class EventService {
         return convFile;
     }
 
-    public List<EventResponseDto> getEvents(int page, int size) {
+    public List<EventResponseDto> getUpComingEvents(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Event> eventsPage = this.eventRepository.findAll(pageable);
+        Page<Event> eventsPage = this.eventRepository.findUpComingEvents(new Date(), pageable);
         return eventsPage.map(event -> new EventResponseDto(event.getId(), event.getTitle(), event.getDescription(), event.getDate(), "" , "", event.getRemote(), event.getEventUrl(), event.getImgUrl()))
                 .stream().toList();
     }
